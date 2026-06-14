@@ -153,3 +153,4 @@ class ProviderChatRequest(BaseModel):
     messages: list[dict[str, str]]
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: int | None = Field(default=None, ge=1)
+    session_id: str | None = Field(default=None, max_length=255)

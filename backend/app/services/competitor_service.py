@@ -7,6 +7,11 @@ from app.crud.competitor import competitor_repository, competitor_snapshot_repos
 from app.models.competitor import Competitor
 from app.models.user import User
 from app.schemas.competitor import CompetitorCreate, CompetitorUpdate
+from app.services.intelligence_hooks import (
+    on_competitor_created,
+    on_competitor_deleted,
+    on_competitor_updated,
+)
 from app.services.search_service import search_service
 
 logger = get_logger(__name__)
@@ -34,6 +39,10 @@ class CompetitorService:
         await db.commit()
         await db.refresh(competitor)
         logger.info("competitor_created", competitor_id=competitor.id)
+        try:
+            on_competitor_created(competitor)
+        except Exception as exc:
+            logger.warning("intelligence_competitor_created_hook_failed", error=str(exc))
         return competitor
 
     async def update(
@@ -49,12 +58,21 @@ class CompetitorService:
         )
         await db.commit()
         await db.refresh(competitor)
+        try:
+            on_competitor_updated(competitor)
+        except Exception as exc:
+            logger.warning("intelligence_competitor_updated_hook_failed", error=str(exc))
         return competitor
 
     async def delete(self, db: AsyncSession, *, competitor: Competitor) -> None:
         """Soft delete a competitor."""
+        competitor_id = competitor.id
         await competitor_repository.delete(db, db_obj=competitor)
         await db.commit()
+        try:
+            on_competitor_deleted(competitor_id)
+        except Exception as exc:
+            logger.warning("intelligence_competitor_deleted_hook_failed", error=str(exc))
 
     async def take_snapshot(
         self,

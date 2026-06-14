@@ -11,6 +11,7 @@ from app.core.exceptions import AppException, NotFoundException
 from app.core.logging import get_logger
 from app.crud.base import BaseRepository
 from app.crud.topic import analysis_run_repository, topic_repository
+from app.services.intelligence_hooks import on_report_created
 from app.models.report import Report
 from app.models.user import User
 from app.reporting.base import ReportBuilder
@@ -59,6 +60,10 @@ class ReportService:
 
         await db.commit()
         await db.refresh(report)
+        try:
+            on_report_created(report)
+        except Exception as exc:
+            logger.warning("intelligence_report_created_hook_failed", error=str(exc))
         return report
 
     async def _generate_report(

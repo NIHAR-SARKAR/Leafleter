@@ -12,6 +12,7 @@ from app.api.v1.endpoints import (
     competitors,
     content,
     debate,
+    intelligence,
     jobs,
     leads,
     notifications,
@@ -60,4 +61,7 @@ api_router.include_router(
 api_router.include_router(leads.router, prefix="/leads", tags=["Lead Discovery"])
 api_router.include_router(
     report_comments.router, prefix="/reports", tags=["Report Comments"]
+)
+api_router.include_router(
+    intelligence.router, prefix="/intelligence", tags=["Intelligence"]
 )
