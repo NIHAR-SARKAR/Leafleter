@@ -41,9 +41,9 @@ backend/
 
 ```bash
 cd backend
-python -m venv venv
-venv\Scripts\activate      # Windows
-# source venv/bin/activate # macOS/Linux
+python -m venv .venv
+.venv\Scripts\activate      # Windows
+# source .venv/bin/activate # macOS/Linux
 pip install -e ".[dev]"
 cp .env.example .env
 alembic upgrade head

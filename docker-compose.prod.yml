@@ -1,0 +1,91 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.backend
+    container_name: leafleter-backend
+    restart: unless-stopped
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=${DATABASE_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - REDIS_URL=${REDIS_URL}
+      - OBJECT_STORAGE_DRIVER=${OBJECT_STORAGE_DRIVER}
+      - OBJECT_STORAGE_ENDPOINT=${OBJECT_STORAGE_ENDPOINT}
+      - OBJECT_STORAGE_ACCESS_KEY=${OBJECT_STORAGE_ACCESS_KEY}
+      - OBJECT_STORAGE_SECRET_KEY=${OBJECT_STORAGE_SECRET_KEY}
+      - OBJECT_STORAGE_BUCKET=${OBJECT_STORAGE_BUCKET}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM=${SMTP_FROM}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - leafleter
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.backend
+    container_name: leafleter-scheduler
+    restart: unless-stopped
+    command: ["python", "-m", "app.scheduler.scheduler"]
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=${DATABASE_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - REDIS_URL=${REDIS_URL}
+    depends_on:
+      - backend
+      - postgres
+      - redis
+    networks:
+      - leafleter
+
+  frontend:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.frontend
+    container_name: leafleter-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - leafleter
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: leafleter-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - leafleter
+
+  redis:
+    image: redis:7-alpine
+    container_name: leafleter-redis
+    restart: unless-stopped
+    networks:
+      - leafleter
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  leafleter:
+    driver: bridge

@@ -486,16 +486,16 @@ All API endpoints are versioned under `/api/v1/`.
 
 Supported providers:
 
-| Provider         | Status  | Notes                                       |
-| ---------------- | ------- | ------------------------------------------- |
-| OpenAI           | ✅ Full | Chat completions, embeddings, model listing |
-| Azure OpenAI     | ⚠️ Stub | Config validation + model list              |
-| Anthropic Claude | ⚠️ Stub | Config validation + model list              |
-| Google Gemini    | ⚠️ Stub | Config validation + model list              |
-| OpenRouter       | ⚠️ Stub | Config validation + model list              |
-| AWS Bedrock      | ⚠️ Stub | Config validation + model list              |
-| Moonshot Kimi    | ⚠️ Stub | Config validation + model list              |
-| Alibaba Qwen     | ⚠️ Stub | Config validation + model list              |
+| Provider         | Notes                                       |
+| ---------------- | ------------------------------------------- |
+| OpenAI           | Chat completions, embeddings, model listing |
+| Azure OpenAI     | Config validation + model list              |
+| Anthropic Claude | Config validation + model list              |
+| Google Gemini    | Config validation + model list              |
+| OpenRouter       | Config validation + model list              |
+| AWS Bedrock      | Config validation + model list              |
+| Moonshot Kimi    | Config validation + model list              |
+| Alibaba Qwen     | Config validation + model list              |
 
 Stubs follow the same `BaseProvider` interface and can be fully implemented by adding the provider SDK call in the respective adapter file.
 
