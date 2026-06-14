@@ -1,5 +1,6 @@
 import {
   Bell,
+  Brain,
   Calendar,
   FileText,
   LayoutDashboard,
@@ -19,6 +20,7 @@ import { useAuthStore } from "@/stores/authStore";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Intelligence", href: "/intelligence", icon: Brain },
   { name: "Topics", href: "/topics", icon: MessageSquare },
   { name: "Providers", href: "/providers", icon: Shield },
   { name: "Reports", href: "/reports", icon: FileText },

@@ -14,6 +14,10 @@ import { Settings } from "@/pages/Settings";
 import { TopicDetail } from "@/pages/TopicDetail";
 import { Topics } from "@/pages/Topics";
 import { Users } from "@/pages/Users";
+import { ActionsView } from "@/intelligence/pages/ActionsView";
+import { BriefingView } from "@/intelligence/pages/BriefingView";
+import { EntityDetail } from "@/intelligence/pages/EntityDetail";
+import { TodayView } from "@/intelligence/pages/TodayView";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem("access_token");
@@ -50,6 +54,10 @@ export const router = createBrowserRouter([
       { path: "competitors", element: <Competitors /> },
       { path: "search", element: <Search /> },
       { path: "users", element: <Users /> },
+      { path: "intelligence", element: <TodayView /> },
+      { path: "intelligence/actions", element: <ActionsView /> },
+      { path: "intelligence/entity/:entityType/:entityId", element: <EntityDetail /> },
+      { path: "intelligence/brief/:briefType", element: <BriefingView /> },
       { path: "settings", element: <Settings /> },
     ],
   },
