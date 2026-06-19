@@ -1,6 +1,6 @@
 """Scheduled job handlers."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.logging import get_logger
 from app.crud.base import BaseRepository
 from app.models.job import Job
-from app.models.topic import Topic
+from app.models.organization import Organization
 from app.services.analysis_service import analysis_service
 from app.services.search_service import search_service
 
@@ -28,8 +28,8 @@ async def re_analysis_job(
     topic = await topic_repository.get_or_404_for_organization(
         db, topic_id, organization_id
     )
-    from app.schemas.topic import TopicAnalyzeRequest
     from app.models.user import User
+    from app.schemas.topic import TopicAnalyzeRequest
 
     user = await db.get(User, config.get("user_id"))
     if user is None:
@@ -114,6 +114,39 @@ async def competitor_snapshot_job(
     await db.commit()
 
 
+async def competitor_feature_monitor_job(
+    db: AsyncSession,
+    *,
+    organization_id: int,
+    competitor_id: int,
+    config: dict[str, Any],
+) -> None:
+    """Monitor competitor features and generate a comparison report."""
+    from app.crud.competitor import competitor_repository
+    from app.models.organization import Organization
+    from app.schemas.competitor import CompetitorFeatureComparisonCreate
+    from app.services.competitor_feature_service import competitor_feature_service
+
+    competitor = await competitor_repository.get_or_404(db, competitor_id)
+    if competitor.organization_id != organization_id:
+        raise ValueError("Competitor not found")
+
+    organization = await db.get(Organization, organization_id)
+    if organization is None:
+        raise ValueError("Organization not found")
+
+    title = config.get("title") or f"Scheduled Feature Comparison: {competitor.name}"
+    await competitor_feature_service.run_comparison(
+        db,
+        competitor=competitor,
+        organization=organization,
+        obj_in=CompetitorFeatureComparisonCreate(
+            title=title,
+            report_format=config.get("report_format", "docx"),
+        ),
+    )
+
+
 async def brand_monitor_job(
     db: AsyncSession,
     *,
@@ -138,6 +171,50 @@ async def brand_monitor_job(
     )
 
 
+async def newsletter_job(
+    db: AsyncSession,
+    *,
+    organization_id: int,
+    config: dict[str, Any],
+) -> None:
+    """Build and send a scheduled newsletter digest."""
+    from app.services.newsletter_service import newsletter_service
+
+    await newsletter_service.run_scheduled_newsletter(
+        db, organization_id=organization_id, config=config
+    )
+
+
+async def intelligence_ingestion_job(
+    db: AsyncSession,
+    *,
+    organization_id: int,
+    config: dict[str, Any],
+) -> None:
+    """Run intelligence ingestion for all active sources in an organization."""
+    from app.services.intelligence_ingestion_service import (
+        intelligence_ingestion_service,
+    )
+
+    source_id = config.get("source_id")
+    if source_id:
+        from app.crud.intelligence import intelligence_source_repository
+
+        source = await intelligence_source_repository.get_or_404(db, source_id)
+        if source.organization_id != organization_id:
+            raise ValueError("Source not found")
+        organization = await db.get(Organization, organization_id)
+        if organization is None:
+            raise ValueError("Organization not found")
+        await intelligence_ingestion_service.ingest_source(
+            db, source=source, organization=organization
+        )
+    else:
+        await intelligence_ingestion_service.ingest_all_active_sources(
+            db, organization_id=organization_id
+        )
+
+
 async def execute_job(
     db: AsyncSession,
     *,
@@ -150,7 +227,7 @@ async def execute_job(
     repo = BaseRepository(Job)
     job = await repo.get_or_404(db, job_id)
     job.status = "running"
-    job.started_at = datetime.now(timezone.utc)
+    job.started_at = datetime.now(UTC)
     await db.commit()
 
     try:
@@ -160,8 +237,14 @@ async def execute_job(
             await report_generation_job(db, organization_id=organization_id, topic_id=config["topic_id"], config=config)
         elif job_type == "competitor_snapshot":
             await competitor_snapshot_job(db, organization_id=organization_id, competitor_id=config["competitor_id"], config=config)
+        elif job_type == "competitor_feature_monitor":
+            await competitor_feature_monitor_job(db, organization_id=organization_id, competitor_id=config["competitor_id"], config=config)
         elif job_type == "brand_monitor":
             await brand_monitor_job(db, organization_id=organization_id, topic_id=config["topic_id"], config=config)
+        elif job_type == "intelligence_ingestion":
+            await intelligence_ingestion_job(db, organization_id=organization_id, config=config)
+        elif job_type == "newsletter":
+            await newsletter_job(db, organization_id=organization_id, config=config)
         else:
             raise ValueError(f"Unknown job type: {job_type}")
 
@@ -172,5 +255,5 @@ async def execute_job(
         job.error_message = str(exc)
         logger.exception("job_execution_failed", job_id=job_id, error=str(exc))
     finally:
-        job.completed_at = datetime.now(timezone.utc)
+        job.completed_at = datetime.now(UTC)
         await db.commit()

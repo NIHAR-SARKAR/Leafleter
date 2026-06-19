@@ -62,7 +62,7 @@
     {
       "name": "Full Stack: Backend + Frontend",
       "configurations": [
-        "Backend: FastAPI (Port 8081)",
+        "Backend: FastAPI (Port 8085)",
         "Frontend: Chrome"
       ],
       "stopAll": true,

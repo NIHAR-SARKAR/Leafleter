@@ -3,18 +3,23 @@
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
-    alerts,
     alert_rules,
+    alerts,
     api_keys,
     auth,
     campaigns,
     chat,
     competitors,
     content,
+    dashboard,
     debate,
+    facts,
+    integrations,
     intelligence,
+    intelligence_sources,
     jobs,
     leads,
+    newsletters,
     notifications,
     organizations,
     providers,
@@ -24,6 +29,7 @@ from app.api.v1.endpoints import (
     schedules,
     search,
     topics,
+    usage,
     users,
 )
 
@@ -43,6 +49,12 @@ api_router.include_router(chat.router, prefix="/chat", tags=["Chat"])
 api_router.include_router(reports.router, prefix="/reports", tags=["Reports"])
 api_router.include_router(schedules.router, prefix="/schedules", tags=["Schedules"])
 api_router.include_router(jobs.router, prefix="/jobs", tags=["Jobs"])
+api_router.include_router(
+    integrations.router, prefix="/integrations", tags=["Integrations"]
+)
+api_router.include_router(
+    newsletters.router, prefix="/newsletters", tags=["Newsletters"]
+)
 api_router.include_router(
     notifications.router, prefix="/notifications", tags=["Notifications"]
 )
@@ -64,4 +76,24 @@ api_router.include_router(
 )
 api_router.include_router(
     intelligence.router, prefix="/intelligence", tags=["Intelligence"]
+)
+api_router.include_router(
+    intelligence_sources.router,
+    prefix="/intelligence",
+    tags=["Intelligence Sources"],
+)
+api_router.include_router(
+    facts.router,
+    prefix="/facts",
+    tags=["Facts"],
+)
+api_router.include_router(
+    usage.router,
+    prefix="/usage",
+    tags=["Usage"],
+)
+api_router.include_router(
+    dashboard.router,
+    prefix="/dashboard",
+    tags=["Dashboard"],
 )

@@ -3,13 +3,18 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Optional
+import contextlib
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 
 from app.core.config import settings
+from app.core.deps import ActiveUserDep, DbDep, OrgIdDep
+from app.core.exceptions import NotFoundException
 from app.core.intelligence import get_intelligence_core
 from app.core.logging import get_logger
+from app.models.organization import Organization
+from app.schemas.rag import AskRequest
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["intelligence"])
@@ -25,7 +30,9 @@ def _to_thread(func: Any, *args: Any, **kwargs: Any) -> Any:
 
 
 @router.get("/today")
-async def get_today_intelligence(core: dict[str, Any] = Depends(_core)) -> dict[str, Any]:
+async def get_today_intelligence(
+    core: Annotated[dict[str, Any], Depends(_core)],
+) -> dict[str, Any]:
     """Return today's intelligence snapshot for the dashboard."""
     if not core or not settings.ENABLE_INTELLIGENCE_CORE:
         return {"enabled": False, "message": "Intelligence core is disabled"}
@@ -59,7 +66,7 @@ async def get_today_intelligence(core: dict[str, Any] = Depends(_core)) -> dict[
 async def get_entity_intelligence(
     entity_type: str,
     entity_id: str,
-    core: dict[str, Any] = Depends(_core),
+    core: Annotated[dict[str, Any], Depends(_core)],
 ) -> dict[str, Any]:
     """Return full intelligence for a specific entity."""
     if not core or not settings.ENABLE_INTELLIGENCE_CORE:
@@ -86,7 +93,7 @@ async def get_entity_intelligence(
 @router.get("/brief/{brief_type}")
 async def get_brief(
     brief_type: str,
-    core: dict[str, Any] = Depends(_core),
+    core: Annotated[dict[str, Any], Depends(_core)],
 ) -> dict[str, Any]:
     """Return a generated intelligence brief."""
     if not core or not settings.ENABLE_INTELLIGENCE_CORE:
@@ -125,7 +132,7 @@ async def get_brief(
 @router.post("/action")
 async def create_action(
     action_request: dict[str, Any],
-    core: dict[str, Any] = Depends(_core),
+    core: Annotated[dict[str, Any], Depends(_core)],
 ) -> dict[str, Any]:
     """Create a new action from a request payload."""
     if not core or not settings.ENABLE_INTELLIGENCE_CORE:
@@ -141,9 +148,9 @@ async def create_action(
 
 @router.get("/actions")
 async def list_actions(
-    status: Optional[str] = "pending",
+    core: Annotated[dict[str, Any], Depends(_core)],
+    status: str | None = "pending",
     limit: int = 50,
-    core: dict[str, Any] = Depends(_core),
 ) -> dict[str, Any]:
     """List actions, optionally filtered by status."""
     if not core or not settings.ENABLE_INTELLIGENCE_CORE:
@@ -165,7 +172,7 @@ async def list_actions(
 async def mark_action_executed(
     action_id: str,
     result: dict[str, Any],
-    core: dict[str, Any] = Depends(_core),
+    core: Annotated[dict[str, Any], Depends(_core)],
 ) -> dict[str, Any]:
     """Mark an action as executed with an optional result payload."""
     if not core or not settings.ENABLE_INTELLIGENCE_CORE:
@@ -183,7 +190,7 @@ async def mark_action_executed(
 async def dismiss_action(
     action_id: str,
     reason: dict[str, Any],
-    core: dict[str, Any] = Depends(_core),
+    core: Annotated[dict[str, Any], Depends(_core)],
 ) -> dict[str, Any]:
     """Dismiss an action without executing it."""
     if not core or not settings.ENABLE_INTELLIGENCE_CORE:
@@ -200,8 +207,8 @@ async def dismiss_action(
 
 @router.get("/workflows")
 async def list_workflows(
-    status: Optional[str] = None,
-    core: dict[str, Any] = Depends(_core),
+    core: Annotated[dict[str, Any], Depends(_core)],
+    status: str | None = None,
 ) -> dict[str, Any]:
     """List workflow runs."""
     if not core or not settings.ENABLE_INTELLIGENCE_CORE:
@@ -221,7 +228,7 @@ async def list_workflows(
 @router.get("/search")
 async def unified_search(
     q: str,
-    core: dict[str, Any] = Depends(_core),
+    core: Annotated[dict[str, Any], Depends(_core)],
 ) -> dict[str, Any]:
     """Search the intelligence graph for entities matching ``q``."""
     if not core or not settings.ENABLE_INTELLIGENCE_CORE:
@@ -237,10 +244,32 @@ async def unified_search(
         return {"error": str(exc)}
 
 
+@router.post("/ask")
+async def ask_Comrade(
+    db: DbDep,
+    org_id: OrgIdDep,
+    request: AskRequest,
+    current_user: ActiveUserDep,
+) -> dict[str, Any]:
+    """Answer a question using RAG over verified intelligence."""
+    from app.services.rag_service import rag_service
+
+    organization = await db.get(Organization, org_id)
+    if organization is None:
+        raise NotFoundException("Organization not found")
+
+    response = await rag_service.ask(
+        db,
+        organization=organization,
+        request=request,
+    )
+    return response.model_dump()
+
+
 @router.websocket("/ws")
 async def intelligence_websocket(
     websocket: WebSocket,
-    core: dict[str, Any] = Depends(_core),
+    core: Annotated[dict[str, Any], Depends(_core)],
 ) -> None:
     """Stream intelligence events to connected clients via WebSocket."""
     await websocket.accept()
@@ -261,7 +290,5 @@ async def intelligence_websocket(
     except Exception as exc:
         logger.error("intelligence_websocket_error", error=str(exc))
     finally:
-        try:
+        with contextlib.suppress(Exception):
             await websocket.close()
-        except Exception:
-            pass

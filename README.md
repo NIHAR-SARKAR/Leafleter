@@ -133,6 +133,13 @@ The platform is designed as a **multi-tenant SaaS** with strict organization iso
 - Campaign Analyzer
 - Lead Discovery
 
+### Real-Time Dashboard
+
+- Live organization stat cards (topics, competitors, sources, alerts, intelligence items, facts)
+- 30-day AI spend and token usage analytics
+- Daily cost trend line chart and provider cost bar chart
+- WebSocket-powered live updates with connection indicator
+
 ### Team Collaboration
 
 - User invitations
@@ -269,7 +276,11 @@ npm install
 npm run dev
 ```
 
-Frontend runs at `http://localhost:5173`.
+Frontend runs at `http://localhost:5240`.
+
+### Windows One-Click Start
+
+Double-click `start-dev.bat` in the project root to launch both the backend and frontend in separate windows.
 
 ### 4. Access API Docs
 
@@ -338,7 +349,7 @@ docker compose up --build
 This starts:
 
 - Backend API on port 8085
-- Frontend on port 5173
+- Frontend on port 5240
 - Scheduler service
 - Redis
 - MinIO object storage
@@ -463,6 +474,11 @@ All API endpoints are versioned under `/api/v1/`.
 - `POST /api/v1/content/generate`
 - `POST /api/v1/campaigns/analyze`
 - `POST /api/v1/leads/discover`
+
+### Dashboard
+
+- `GET /api/v1/dashboard/snapshot` — current stats and 30-day cost analytics
+- `WS /api/v1/dashboard/ws` — live dashboard snapshot stream
 
 ---
 
