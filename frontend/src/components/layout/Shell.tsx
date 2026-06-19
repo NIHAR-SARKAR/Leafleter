@@ -1,16 +1,21 @@
 import {
-  Bell,
-  Brain,
-  Calendar,
-  FileText,
-  LayoutDashboard,
-  LogOut,
-  MessageSquare,
-  Search,
-  Settings,
-  Shield,
-  Target,
-  Users
+    Bell,
+    Brain,
+    Calendar,
+    FileText,
+    HelpCircle,
+    LayoutDashboard,
+    Lightbulb,
+    Link2,
+    LogOut,
+    Mail,
+    MessageSquare,
+    Newspaper,
+    Search,
+    Settings,
+    Shield,
+    Target,
+    Users
 } from "lucide-react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 
@@ -21,6 +26,11 @@ import { useAuthStore } from "@/stores/authStore";
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Intelligence", href: "/intelligence", icon: Brain },
+  { name: "Newsfeed", href: "/newsfeed", icon: Newspaper },
+  { name: "Facts", href: "/facts", icon: Lightbulb },
+  { name: "Ask Comrade", href: "/ask", icon: HelpCircle },
+  { name: "Integrations", href: "/integrations", icon: Link2 },
+  { name: "Newsletters", href: "/newsletters", icon: Mail },
   { name: "Topics", href: "/topics", icon: MessageSquare },
   { name: "Providers", href: "/providers", icon: Shield },
   { name: "Reports", href: "/reports", icon: FileText },

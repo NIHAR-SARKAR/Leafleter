@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # CORS
-    CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    CORS_ORIGINS: list[str] = ["http://localhost:5240", "http://localhost:3000"]
 
     # Object Storage
     OBJECT_STORAGE_DRIVER: Literal["local", "s3"] = "local"
@@ -89,7 +89,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_WINDOW_SECONDS: int = 60
 
     # Frontend URL
-    FRONTEND_URL: str = "http://localhost:5173"
+    FRONTEND_URL: str = "http://localhost:5240"
 
     # Intelligence Core
     ENABLE_INTELLIGENCE_CORE: bool = True
