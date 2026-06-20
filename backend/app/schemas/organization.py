@@ -28,6 +28,7 @@ class OrganizationUpdate(BaseModel):
     billing_email: str | None = Field(None, max_length=255)
     plan: str | None = None
     settings: dict | None = None
+    features: list[dict] | None = None
     is_active: bool | None = None
 
 
@@ -50,6 +51,7 @@ class OrganizationInDB(OrganizationBase):
     slug: str
     is_active: bool
     is_white_label: bool
+    features: list[dict] | None = None
     created_at: datetime
     updated_at: datetime
 

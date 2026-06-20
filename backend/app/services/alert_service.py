@@ -10,6 +10,7 @@ from app.core.logging import get_logger
 from app.crud.base import BaseRepository
 from app.models.alert import Alert, AlertRule
 from app.models.user import User
+from app.services.intelligence_hooks import on_alert_created
 from app.schemas.alert import AlertRuleCreate, AlertRuleUpdate
 from app.schemas.notification import NotificationCreate
 from app.services.notification_service import notification_service
@@ -171,6 +172,10 @@ class AlertService:
                 )
 
         logger.info("alert_triggered", alert_id=alert.id, rule_id=rule.id)
+        try:
+            on_alert_created(alert)
+        except Exception as exc:
+            logger.warning("intelligence_alert_created_hook_failed", error=str(exc))
         return alert
 
 

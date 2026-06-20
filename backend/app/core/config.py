@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # CORS
-    CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    CORS_ORIGINS: list[str] = ["http://localhost:5240", "http://localhost:3000"]
 
     # Object Storage
     OBJECT_STORAGE_DRIVER: Literal["local", "s3"] = "local"
@@ -89,7 +89,26 @@ class Settings(BaseSettings):
     RATE_LIMIT_WINDOW_SECONDS: int = 60
 
     # Frontend URL
-    FRONTEND_URL: str = "http://localhost:5173"
+    FRONTEND_URL: str = "http://localhost:5240"
+
+    # Intelligence Core
+    ENABLE_INTELLIGENCE_CORE: bool = True
+    ENABLE_AUTO_WORKFLOWS: bool = True
+    ENABLE_SMART_ALERTS: bool = True
+    ENABLE_AUTO_REPORTS: bool = True
+    ENABLE_ACTION_AI_GENERATION: bool = False
+    INTELLIGENCE_DB_PATH: str = "data/intelligence.db"
+    DAILY_PULSE_HOUR: int = 9
+    DAILY_PULSE_TIMEZONE: str = "UTC"
+    TOPIC_ANOMALITY_THRESHOLD_PCT: int = 20
+    COMPETITOR_MENTION_THRESHOLD: int = 2
+    ALERT_AGGREGATION_HOURS: int = 24
+    REPORT_TRIGGER_ALERT_COUNT: int = 3
+    CONTEXT_MEMORY_MAX_EVENTS: int = 50
+    WORKFLOW_RETRY_ATTEMPTS: int = 3
+    PRIORITY_QUEUE_MAX_SIZE: int = 50
+    INTELLIGENCE_AI_MODEL: str = "gpt-4"
+    ACTION_GENERATION_MAX_PER_EVENT: int = 3
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod

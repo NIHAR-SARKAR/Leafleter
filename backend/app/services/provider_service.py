@@ -14,6 +14,10 @@ from app.models.user import User
 from app.providers.base import ProviderResponse
 from app.providers.registry import ProviderRegistry
 from app.schemas.provider import ProviderChatRequest, ProviderCreate, ProviderUpdate
+from app.services.intelligence_hooks import (
+    enrich_provider_prompt,
+    store_provider_context,
+)
 from app.utils.crypto import decrypt, encrypt
 
 logger = get_logger(__name__)
@@ -144,12 +148,31 @@ class ProviderService:
         """Execute a direct chat request through a provider."""
         config = self._build_runtime_config(provider)
         adapter = ProviderRegistry.create(provider.provider_type, config)
+
+        messages = obj_in.messages
+        session_id = obj_in.session_id
+        if session_id and messages:
+            try:
+                last_user_message = messages[-1].get("content", "")
+                enriched = enrich_provider_prompt(session_id, last_user_message)
+                messages = messages[:-1] + [{**messages[-1], "content": enriched}]
+            except Exception as exc:
+                logger.warning("provider_context_enrichment_failed", error=str(exc))
+
         response = await adapter.chat_completion(
-            messages=obj_in.messages,
+            messages=messages,
             model=obj_in.model,
             temperature=obj_in.temperature,
             max_tokens=obj_in.max_tokens,
         )
+
+        if session_id and messages:
+            try:
+                last_user_message = messages[-1].get("content", "")
+                store_provider_context(session_id, last_user_message, response.content)
+            except Exception as exc:
+                logger.warning("provider_context_storage_failed", error=str(exc))
+
         await self._record_cost(
             db,
             response.usage,

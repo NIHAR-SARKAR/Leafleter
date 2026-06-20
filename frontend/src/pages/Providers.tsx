@@ -1,5 +1,6 @@
-import { Plus, TestTube } from "lucide-react";
+import { Pencil, Plus, TestTube, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +10,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,7 +29,6 @@ import {
 } from "@/components/ui/select";
 import { providersApi } from "@/services/api";
 import type { AzureProviderConfig, Provider } from "@/types";
-import { toast } from 'react-hot-toast';
 
 const AZURE_API_PATTERNS: {
   value: AzureProviderConfig["api_pattern"];
@@ -66,6 +74,10 @@ export function Providers() {
   const [reasoningEffort, setReasoningEffort] = useState<AzureProviderConfig["reasoning_effort"]>(undefined);
   const [verbosity, setVerbosity] = useState<AzureProviderConfig["verbosity"]>(undefined);
 
+  const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [providerToDelete, setProviderToDelete] = useState<Provider | null>(null);
+
   const isAzure = providerType === "azure_openai";
 
   const fetchProviders = async () => {
@@ -93,6 +105,30 @@ export function Providers() {
     setV1ApiVersion("");
     setReasoningEffort(undefined);
     setVerbosity(undefined);
+    setEditingProvider(null);
+  };
+
+  const populateForm = (provider: Provider) => {
+    setName(provider.name);
+    setProviderType(provider.provider_type);
+    setApiKey("");
+    setApiBase(provider.api_base ?? "");
+    setApiVersion(provider.api_version ?? "");
+    setRegion(provider.region ?? "");
+
+    const config = provider.config ?? {};
+    setDeployment(String(config.deployment ?? ""));
+    setApiPattern((config.api_pattern as AzureProviderConfig["api_pattern"]) ?? undefined);
+    setUseResponsesApi(
+      config.use_responses_api === undefined ? undefined : Boolean(config.use_responses_api)
+    );
+    setModelName(String(config.model_name ?? ""));
+    setResponsesApiVersion(String(config.responses_api_version ?? ""));
+    setV1ApiVersion(String(config.v1_api_version ?? ""));
+    setReasoningEffort(
+      (config.reasoning_effort as AzureProviderConfig["reasoning_effort"]) ?? undefined
+    );
+    setVerbosity((config.verbosity as AzureProviderConfig["verbosity"]) ?? undefined);
   };
 
   const buildConfig = (): Record<string, unknown> | undefined => {
@@ -125,12 +161,58 @@ export function Providers() {
     });
     resetForm();
     fetchProviders();
+    toast.success("Provider created");
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProvider) return;
+
+    await providersApi.update(editingProvider.id, {
+      name,
+      api_key: apiKey || undefined,
+      api_base: apiBase || undefined,
+      api_version: apiVersion || undefined,
+      region: region || undefined,
+      config: buildConfig(),
+    });
+    resetForm();
+    fetchProviders();
+    toast.success("Provider updated");
+  };
+
+  const startEdit = (provider: Provider) => {
+    populateForm(provider);
+    setEditingProvider(provider);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const cancelEdit = () => {
+    resetForm();
+  };
+
+  const confirmDelete = (provider: Provider) => {
+    setProviderToDelete(provider);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!providerToDelete) return;
+    try {
+      await providersApi.delete(providerToDelete.id);
+      setDeleteDialogOpen(false);
+      setProviderToDelete(null);
+      fetchProviders();
+      toast.success("Provider deleted");
+    } catch {
+      toast.error("Failed to delete provider");
+    }
   };
 
   const handleTest = async (id: number) => {
     try {
       const { data } = await providersApi.test(id);
-      data.success ? toast.success(`✔ Connection successful`): toast.error("Connection test failed !");
+      data.success ? toast.success("✔ Connection successful") : toast.error("Connection test failed");
     } catch (error) {
       toast.error("Connection test failed");
     }
@@ -144,10 +226,10 @@ export function Providers() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Add Provider</CardTitle>
+          <CardTitle>{editingProvider ? "Edit Provider" : "Add Provider"}</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleCreate} className="space-y-4">
+          <form onSubmit={editingProvider ? handleUpdate : handleCreate} className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
@@ -161,7 +243,12 @@ export function Providers() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="type">Type</Label>
-                <Select value={providerType} onValueChange={setProviderType} required>
+                <Select
+                  value={providerType}
+                  onValueChange={setProviderType}
+                  disabled={!!editingProvider}
+                  required
+                >
                   <SelectTrigger id="type">
                     <SelectValue placeholder="Type" />
                   </SelectTrigger>
@@ -179,7 +266,7 @@ export function Providers() {
                 <Input
                   id="api_key"
                   type="password"
-                  placeholder="API Key"
+                  placeholder={editingProvider ? "Leave blank to keep unchanged" : "API Key"}
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                 />
@@ -339,10 +426,26 @@ export function Providers() {
               </div>
             )}
 
-            <Button type="submit">
-              <Plus className="mr-2 h-4 w-4" />
-              Add
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button type="submit">
+                {editingProvider ? (
+                  <>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Update
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add
+                  </>
+                )}
+              </Button>
+              {editingProvider && (
+                <Button type="button" variant="outline" onClick={cancelEdit}>
+                  Cancel
+                </Button>
+              )}
+            </div>
           </form>
         </CardContent>
       </Card>
@@ -354,10 +457,20 @@ export function Providers() {
                 <CardTitle>{provider.name}</CardTitle>
                 <CardDescription>{provider.provider_type}</CardDescription>
               </div>
-              <Button size="sm" variant="outline" onClick={() => handleTest(provider.id)}>
-                <TestTube className="mr-2 h-4 w-4" />
-                Test
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => handleTest(provider.id)}>
+                  <TestTube className="mr-2 h-4 w-4" />
+                  Test
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => startEdit(provider)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => confirmDelete(provider)}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-sm text-muted-foreground">
@@ -369,6 +482,27 @@ export function Providers() {
           </Card>
         ))}
       </div>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Provider</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete{" "}
+              <span className="font-semibold">{providerToDelete?.name}</span>? This action cannot be
+              undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

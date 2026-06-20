@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.core.exceptions import AppException
 from app.core.logging import get_logger
 from app.crud.topic import topic_repository, topic_source_repository
+from app.services.intelligence_hooks import on_search_executed
 from app.db.base import now_utc
 from app.models.topic import TopicSource
 from app.schemas.search import CrawlResponse, SearchResult
@@ -80,7 +81,12 @@ class SearchService:
             query=query,
             num_results=num_results,
         )
-        return await engine.search(query, num_results)
+        results = await engine.search(query, num_results)
+        try:
+            on_search_executed(query, results, organization_id=organization_id)
+        except Exception as exc:
+            logger.warning("intelligence_search_hook_failed", error=str(exc))
+        return results
 
     async def crawl(self, url: str) -> CrawlResponse:
         """Crawl a URL and return extracted content."""

@@ -24,6 +24,7 @@ from app.schemas.topic import (
     TopicUpdate,
 )
 from app.services.analysis_service import analysis_service
+from app.services.intelligence_hooks import on_topic_created, on_topic_deleted, on_topic_updated
 from app.services.search_service import search_service
 
 logger = get_logger(__name__)
@@ -65,6 +66,10 @@ async def create_topic(
     await db.commit()
     await db.refresh(topic)
     logger.info("topic_created", topic_id=topic.id, organization_id=org_id)
+    try:
+        on_topic_created(topic)
+    except Exception as exc:
+        logger.warning("intelligence_topic_created_hook_failed", error=str(exc))
     return topic
 
 
@@ -90,11 +95,20 @@ async def update_topic(
 ) -> Any:
     """Update a topic."""
     topic = await topic_repository.get_or_404_for_organization(db, topic_id, org_id)
+    old_data = {
+        "name": topic.name,
+        "status": topic.status,
+        "keywords": topic.keywords,
+    }
     topic = await topic_repository.update(
         db, db_obj=topic, obj_in=obj_in.model_dump(exclude_unset=True)
     )
     await db.commit()
     await db.refresh(topic)
+    try:
+        on_topic_updated(topic, old_data=old_data)
+    except Exception as exc:
+        logger.warning("intelligence_topic_updated_hook_failed", error=str(exc))
     return topic
 
 
@@ -107,8 +121,13 @@ async def delete_topic(
 ) -> None:
     """Soft delete a topic."""
     topic = await topic_repository.get_or_404_for_organization(db, topic_id, org_id)
+    topic_id_str = str(topic.id)
     await topic_repository.delete(db, db_obj=topic)
     await db.commit()
+    try:
+        on_topic_deleted(topic_id_str)
+    except Exception as exc:
+        logger.warning("intelligence_topic_deleted_hook_failed", error=str(exc))
     return None
 
 

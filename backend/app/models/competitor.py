@@ -28,6 +28,12 @@ class Competitor(Base, AuditMixin):
         lazy="selectin",
         cascade="all, delete-orphan",
     )
+    comparisons: Mapped[list["CompetitorFeatureComparison"]] = relationship(
+        "CompetitorFeatureComparison",
+        back_populates="competitor",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
 
 
 class CompetitorSnapshot(Base, AuditMixin):
@@ -40,8 +46,36 @@ class CompetitorSnapshot(Base, AuditMixin):
     content: Mapped[str | None] = mapped_column(Text, nullable=True)
     metrics: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     changes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    features: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
     competitor_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("competitors.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
     competitor: Mapped["Competitor"] = relationship("Competitor", back_populates="snapshots")
+
+
+class CompetitorFeatureComparison(Base, AuditMixin):
+    """Generated feature/capability comparison report for a competitor."""
+
+    __tablename__ = "competitor_feature_comparisons"
+
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    report_format: Mapped[str] = mapped_column(String(20), default="docx", nullable=False)
+    status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False)
+    markdown_content: Mapped[str | None] = mapped_column(Text, nullable=True)
+    file_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    file_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    download_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    sources: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
+    our_features: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
+    their_features: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
+    comparison_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    competitor_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("competitors.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    organization_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    competitor: Mapped["Competitor"] = relationship("Competitor", back_populates="comparisons")

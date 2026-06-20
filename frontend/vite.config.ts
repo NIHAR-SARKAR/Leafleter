@@ -1,5 +1,5 @@
-import path from "path";
 import react from "@vitejs/plugin-react";
+import path from "path";
 import { defineConfig } from "vite";
 
 export default defineConfig({
@@ -10,14 +10,15 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5173,
+    port: 5240,
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:8080",
+        target: "http://127.0.0.1:8085",
         changeOrigin: true,
+        ws: true,
       },
       "/storage": {
-        target: "http://127.0.0.1:8080",
+        target: "http://127.0.0.1:8085",
         changeOrigin: true,
       },
     },

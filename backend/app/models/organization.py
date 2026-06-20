@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import AuditMixin, Base, generate_uuid, now_utc
@@ -33,6 +33,7 @@ class Organization(Base, AuditMixin):
     branding_favicon_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     custom_domain: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    features: Mapped[list[dict] | None] = mapped_column(JSON, nullable=True)
 
     users: Mapped[list["User"]] = relationship(
         "User", back_populates="organization", lazy="selectin"

@@ -68,7 +68,7 @@ services:
     container_name: leafleter-frontend
     restart: unless-stopped
     ports:
-      - "5173:80"
+      - "5240:80"
     depends_on:
       - backend
     networks:

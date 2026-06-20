@@ -1,10 +1,19 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
 import { Shell } from "@/components/layout/Shell";
+import { ActionsView } from "@/intelligence/pages/ActionsView";
+import { BriefingView } from "@/intelligence/pages/BriefingView";
+import { EntityDetail } from "@/intelligence/pages/EntityDetail";
+import { TodayView } from "@/intelligence/pages/TodayView";
 import { AlertRules } from "@/pages/AlertRules";
+import { AskComrade } from "@/pages/AskComrade";
 import { Competitors } from "@/pages/Competitors";
 import { Dashboard } from "@/pages/Dashboard";
+import { Facts } from "@/pages/Facts";
+import { Integrations } from "@/pages/Integrations";
 import { Login } from "@/pages/Login";
+import { Newsfeed } from "@/pages/Newsfeed";
+import { Newsletters } from "@/pages/Newsletters";
 import { Providers } from "@/pages/Providers";
 import { Register } from "@/pages/Register";
 import { Reports } from "@/pages/Reports";
@@ -50,6 +59,15 @@ export const router = createBrowserRouter([
       { path: "competitors", element: <Competitors /> },
       { path: "search", element: <Search /> },
       { path: "users", element: <Users /> },
+      { path: "intelligence", element: <TodayView /> },
+      { path: "newsfeed", element: <Newsfeed /> },
+      { path: "facts", element: <Facts /> },
+      { path: "ask", element: <AskComrade /> },
+      { path: "integrations", element: <Integrations /> },
+      { path: "newsletters", element: <Newsletters /> },
+      { path: "intelligence/actions", element: <ActionsView /> },
+      { path: "intelligence/entity/:entityType/:entityId", element: <EntityDetail /> },
+      { path: "intelligence/brief/:briefType", element: <BriefingView /> },
       { path: "settings", element: <Settings /> },
     ],
   },

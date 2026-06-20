@@ -24,6 +24,7 @@ from app.models.user import User
 from app.providers.base import ProviderUsage
 from app.providers.registry import ProviderRegistry
 from app.schemas.topic import TopicAnalyzeRequest
+from app.services.intelligence_hooks import on_topic_analyzed
 from app.services.provider_service import provider_service
 
 logger = get_logger(__name__)
@@ -120,6 +121,11 @@ class AnalysisService:
             db.add(run)
             await db.commit()
             await db.refresh(run)
+
+            try:
+                on_topic_analyzed(topic, run)
+            except Exception as exc:
+                logger.warning("intelligence_topic_analyzed_hook_failed", error=str(exc))
 
             usage = ProviderUsage(
                 input_tokens=total_input_tokens,

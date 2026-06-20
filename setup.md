@@ -72,7 +72,7 @@ cp backend/.env.example backend/.env
 ### CORS
 
 ```env
-CORS_ORIGINS=["http://localhost:5173","http://localhost:3000"]
+CORS_ORIGINS=["http://localhost:5240","http://localhost:3000"]
 ```
 
 ### AI Provider API Keys
@@ -202,10 +202,15 @@ npm run dev
 
 ### Step 5: Verify
 
-- Open frontend: `http://localhost:5173`
+- Open frontend: `http://localhost:5240`
 - Open API docs: `http://localhost:8085/docs`
 - Register a new user
-- Create your first topic
+- Create a topic
+- View the real-time dashboard at `http://localhost:5240`
+
+### Windows One-Click Start
+
+Double-click `start-dev.bat` in the project root to launch both the backend and frontend in separate Command Prompt windows. The batch file runs the backend on `http://localhost:8085` and points the frontend directly at it.
 
 ---
 
@@ -230,7 +235,7 @@ docker compose down
 Services started:
 
 - Backend API: `http://localhost:8085`
-- Frontend: `http://localhost:5173`
+- Frontend: `http://localhost:5240`
 - MinIO Console: `http://localhost:9001`
 - Redis: `localhost:6379`
 
@@ -525,5 +530,6 @@ After setup:
 5. Run analysis
 6. Generate a report
 7. Set up schedules and alerts
+8. View the real-time dashboard for live stats and AI spend analytics
 
 For architecture details, see `architecture.md`.
